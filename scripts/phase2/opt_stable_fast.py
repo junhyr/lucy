@@ -71,8 +71,8 @@ def run_stable_fast_experiment(exp_cfg, checkpoint_folder=None):
     paths = exp_cfg.paths
     prof_cfg = exp_cfg.profiling
 
-    sys.path.insert(0, os.path.join(paths.streamdiffv2, ".."))
-    from StreamDiffusionV2.streamv2v.inference import SingleGPUInferencePipeline
+    sys.path.insert(0, paths.streamdiffv2)
+    from streamv2v.inference import SingleGPUInferencePipeline
 
     cfg = build_streamdiffv2_config(exp_cfg)
     ckpt_folder = checkpoint_folder or os.path.join(paths.checkpoint_folder, "causvid")

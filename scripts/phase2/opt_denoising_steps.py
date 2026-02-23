@@ -32,8 +32,8 @@ def run_step_experiment(exp_cfg, checkpoint_folder=None, video_path=None):
     prof_cfg = exp_cfg.profiling
     step_variants = exp_cfg.phase2.denoising_steps.variants
 
-    sys.path.insert(0, os.path.join(paths.streamdiffv2, ".."))
-    from StreamDiffusionV2.streamv2v.inference import SingleGPUInferencePipeline, load_mp4_as_tensor
+    sys.path.insert(0, paths.streamdiffv2)
+    from streamv2v.inference import SingleGPUInferencePipeline, load_mp4_as_tensor
 
     ckpt_folder = checkpoint_folder or os.path.join(paths.checkpoint_folder, "causvid")
 

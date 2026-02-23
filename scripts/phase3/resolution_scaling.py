@@ -34,8 +34,8 @@ def run_resolution_scaling(exp_cfg, checkpoint_folder=None, apply_compile=False)
     prof_cfg = exp_cfg.profiling
     model_cfg = exp_cfg.model
 
-    sys.path.insert(0, os.path.join(paths.streamdiffv2, ".."))
-    from StreamDiffusionV2.streamv2v.inference import SingleGPUInferencePipeline
+    sys.path.insert(0, paths.streamdiffv2)
+    from streamv2v.inference import SingleGPUInferencePipeline
 
     ckpt_folder = checkpoint_folder or os.path.join(paths.checkpoint_folder, "causvid")
     prompts = [p1.prompt]

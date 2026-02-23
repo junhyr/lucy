@@ -39,8 +39,8 @@ def measure_throughput_latency_single_gpu(exp_cfg, checkpoint_folder=None):
     p4 = exp_cfg.phase4
     paths = exp_cfg.paths
 
-    sys.path.insert(0, os.path.join(paths.streamdiffv2, ".."))
-    from StreamDiffusionV2.streamv2v.inference import SingleGPUInferencePipeline
+    sys.path.insert(0, paths.streamdiffv2)
+    from streamv2v.inference import SingleGPUInferencePipeline
     from causvid.models.wan.causal_stream_inference import CausalStreamInferencePipeline
 
     cfg = build_streamdiffv2_config(exp_cfg)

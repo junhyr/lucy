@@ -31,7 +31,7 @@ def profile_vae_isolated(exp_cfg, checkpoint_folder=None):
     paths = exp_cfg.paths
     prof_cfg = exp_cfg.profiling
 
-    sys.path.insert(0, os.path.join(paths.streamdiffv2, ".."))
+    sys.path.insert(0, paths.streamdiffv2)
 
     # Load just the VAE
     from causvid.models import get_vae_wrapper

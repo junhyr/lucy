@@ -86,13 +86,19 @@ python3 -c "import flash_attn" 2>/dev/null || {
     echo "  WARNING: flash-attn build failed, will use flex_attention fallback"
 }
 
-# StreamDiffusionV2 — install as editable so 'causvid' and 'streamv2v' are importable
+# StreamDiffusionV2 — add __init__.py where missing so causvid/streamv2v are importable
 if [ -d "$REPOS_DIR/StreamDiffusionV2" ]; then
-  echo "  Installing StreamDiffusionV2 (editable, no-deps)..."
-  pip install -q --no-deps -e "$REPOS_DIR/StreamDiffusionV2" 2>/dev/null || {
-    echo "  pip install -e failed, falling back to PYTHONPATH"
-    export PYTHONPATH="$REPOS_DIR/StreamDiffusionV2:${PYTHONPATH:-}"
-  }
+  echo "  Making StreamDiffusionV2 packages importable..."
+  touch "$REPOS_DIR/StreamDiffusionV2/causvid/__init__.py" 2>/dev/null || true
+  touch "$REPOS_DIR/StreamDiffusionV2/streamv2v/__init__.py" 2>/dev/null || true
+  # Write a persistent PYTHONPATH config
+  echo "$REPOS_DIR/StreamDiffusionV2" > /etc/python_paths.pth 2>/dev/null || true
+  # Also write to site-packages for immediate effect
+  SITE_DIR=$(python3 -c "import site; print(site.getsitepackages()[0])" 2>/dev/null)
+  if [ -n "$SITE_DIR" ]; then
+    echo "$REPOS_DIR/StreamDiffusionV2" > "$SITE_DIR/streamdiffv2.pth" 2>/dev/null || true
+    echo "  Added .pth file to $SITE_DIR"
+  fi
 fi
 
 # ── 4. Download models ────────────────────────────────────────
@@ -116,36 +122,42 @@ print('  Downloading Wan2.1-T2V-1.3B...')
 snapshot_download(
     'Wan-AI/Wan2.1-T2V-1.3B',
     local_dir=os.path.join(ckpt_dir, 'Wan2.1-T2V-1.3B'),
-    local_dir_use_symlinks=False,
 )
 print('  Done.')
-" || echo "  WARNING: Model download failed. Download manually."
+" || echo "  WARNING: Model download failed. Download manually:
+  huggingface-cli download Wan-AI/Wan2.1-T2V-1.3B --local-dir $CKPT_DIR/Wan2.1-T2V-1.3B"
   fi
 
-  # CausVid checkpoint (if available)
-  if [ -d "$NETWORK_VOL/checkpoints/causvid" ]; then
+  # CausVid checkpoint — only need autoregressive_checkpoint/model.pt (~5GB), NOT the full 122GB repo
+  if [ -f "$CKPT_DIR/causvid/model.pt" ]; then
+    echo "  CausVid checkpoint already exists."
+  elif [ -d "$NETWORK_VOL/checkpoints/causvid" ]; then
     ln -sf "$NETWORK_VOL/checkpoints/causvid" "$CKPT_DIR/causvid"
     echo "  Using cached CausVid checkpoint from network volume."
   else
+    echo "  Downloading CausVid autoregressive checkpoint only..."
+    mkdir -p "$CKPT_DIR/causvid"
     python3 -c "
-from huggingface_hub import snapshot_download
+from huggingface_hub import hf_hub_download
 import os
 
-ckpt_dir = '$CKPT_DIR'
+ckpt_dir = os.path.join('$CKPT_DIR', 'causvid')
 
-# CausVid pretrained (autoregressive checkpoint)
-print('  Downloading CausVid checkpoint...')
-try:
-    snapshot_download(
-        'tianweiy/CausVid',
-        local_dir=os.path.join(ckpt_dir, 'causvid'),
-        local_dir_use_symlinks=False,
-    )
-    print('  Done.')
-except Exception as e:
-    print(f'  CausVid download failed: {e}')
-    print('  Will need ODE regression to generate checkpoint.')
-" || echo "  WARNING: CausVid download failed."
+# Only download the autoregressive checkpoint (model.pt), not the full 122GB repo
+print('  Downloading autoregressive_checkpoint/model.pt...')
+hf_hub_download(
+    'tianweiy/CausVid',
+    filename='autoregressive_checkpoint/model.pt',
+    local_dir=ckpt_dir,
+)
+# Move model.pt to expected location
+src = os.path.join(ckpt_dir, 'autoregressive_checkpoint', 'model.pt')
+dst = os.path.join(ckpt_dir, 'model.pt')
+if os.path.exists(src) and not os.path.exists(dst):
+    os.rename(src, dst)
+print('  Done.')
+" || echo "  WARNING: CausVid download failed. Download manually:
+  huggingface-cli download tianweiy/CausVid autoregressive_checkpoint/model.pt --local-dir $CKPT_DIR/causvid"
   fi
 else
   echo "[4/5] Skipping model download (--skip-models)"

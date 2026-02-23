@@ -15,6 +15,9 @@
 # ──────────────────────────────────────────────────────────────
 set -euo pipefail
 
+# Ensure StreamDiffusionV2 is importable
+export PYTHONPATH="/workspace/repos/StreamDiffusionV2:${PYTHONPATH:-}"
+
 CONFIG="configs/experiment_configs.yaml"
 CKPT="${CHECKPOINT_FOLDER:-/workspace/checkpoints/causvid}"
 VIDEO="${VIDEO_PATH:-}"

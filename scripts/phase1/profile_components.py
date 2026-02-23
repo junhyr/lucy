@@ -111,8 +111,8 @@ def run_profiling(exp_cfg, video_path=None, checkpoint_folder=None):
     prof_cfg = exp_cfg.profiling
     paths = exp_cfg.paths
 
-    sys.path.insert(0, os.path.join(paths.streamdiffv2, ".."))
-    from StreamDiffusionV2.streamv2v.inference import SingleGPUInferencePipeline, load_mp4_as_tensor
+    sys.path.insert(0, paths.streamdiffv2)
+    from streamv2v.inference import SingleGPUInferencePipeline, load_mp4_as_tensor
     from scripts.phase1.run_baseline import build_streamdiffv2_config
 
     cfg = build_streamdiffv2_config(exp_cfg)
