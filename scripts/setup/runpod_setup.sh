@@ -65,28 +65,28 @@ fi
 
 # ── 3. Python dependencies ────────────────────────────────────
 echo "[3/5] Installing Python dependencies..."
-pip install -q --upgrade pip
 
-# Install from our requirements
-pip install -q -r /workspace/lucy-poc/scripts/setup/requirements_poc.txt 2>/dev/null || true
+# Only install what's missing — skip torch/flash-attn/xformers (already in RunPod image)
+echo "  Checking pre-installed packages..."
+python3 -c "import torch; print(f'  torch {torch.__version__} ✓')" 2>/dev/null || true
+python3 -c "import flash_attn; print(f'  flash-attn {flash_attn.__version__} ✓')" 2>/dev/null || true
+python3 -c "import xformers; print(f'  xformers {xformers.__version__} ✓')" 2>/dev/null || true
 
-# Install flash-attn for H100 (SM90)
-pip install -q flash-attn==2.7.4.post1 --no-build-isolation 2>/dev/null || \
-  echo "  WARNING: flash-attn install failed, will use flex_attention fallback"
+echo "  Installing missing packages (lightweight only)..."
+pip install -q --no-deps -r /workspace/lucy/scripts/setup/requirements_poc.txt 2>/dev/null || \
+  pip install -q -r /workspace/lucy/scripts/setup/requirements_poc.txt 2>/dev/null || true
 
-# Install StreamDiffusionV2 as editable
+# Only build flash-attn if NOT already installed
+python3 -c "import flash_attn" 2>/dev/null || {
+  echo "  flash-attn not found, building from source (this takes ~15min)..."
+  pip install -q flash-attn --no-build-isolation 2>/dev/null || \
+    echo "  WARNING: flash-attn build failed, will use flex_attention fallback"
+}
+
+# StreamDiffusionV2 — just add to path, don't pip install (avoid dependency re-resolution)
 if [ -d "$REPOS_DIR/StreamDiffusionV2" ]; then
-  cd "$REPOS_DIR/StreamDiffusionV2"
-  pip install -q -e . 2>/dev/null || echo "  WARNING: StreamDiffusionV2 editable install failed"
-  cd "$WORKSPACE"
-fi
-
-# Install stable-fast
-if [ -d "$REPOS_DIR/stable-fast" ]; then
-  cd "$REPOS_DIR/stable-fast"
-  git submodule update --init --recursive 2>/dev/null || true
-  pip install -q -e . 2>/dev/null || echo "  WARNING: stable-fast install failed"
-  cd "$WORKSPACE"
+  echo "  Adding StreamDiffusionV2 to PYTHONPATH"
+  export PYTHONPATH="$REPOS_DIR/StreamDiffusionV2:${PYTHONPATH:-}"
 fi
 
 # ── 4. Download models ────────────────────────────────────────
