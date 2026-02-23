@@ -54,9 +54,9 @@ if [ "$SKIP_REPOS" = false ]; then
         echo "  $dir already exists, skipping."
       fi
     }
-    clone_if_missing "https://github.com/cumulo-autumn/StreamDiffusionV2.git" "$REPOS_DIR/StreamDiffusionV2"
+    clone_if_missing "https://github.com/chenfengxu714/StreamDiffusionV2.git" "$REPOS_DIR/StreamDiffusionV2"
     clone_if_missing "https://github.com/chengzeyi/stable-fast.git" "$REPOS_DIR/stable-fast"
-    clone_if_missing "https://github.com/SageSR/TurboDiffusion.git" "$REPOS_DIR/TurboDiffusion"
+    clone_if_missing "https://github.com/thu-ml/TurboDiffusion.git" "$REPOS_DIR/TurboDiffusion"
     clone_if_missing "https://github.com/NVlabs/rcm.git" "$REPOS_DIR/rcm"
   fi
 else

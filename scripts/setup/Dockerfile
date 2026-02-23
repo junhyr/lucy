@@ -16,9 +16,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /workspace
 
 # Clone repos
-RUN git clone --depth 1 https://github.com/cumulo-autumn/StreamDiffusionV2.git repos/StreamDiffusionV2 && \
+RUN git clone --depth 1 https://github.com/chenfengxu714/StreamDiffusionV2.git repos/StreamDiffusionV2 && \
     git clone --depth 1 https://github.com/chengzeyi/stable-fast.git repos/stable-fast && \
-    git clone --depth 1 https://github.com/SageSR/TurboDiffusion.git repos/TurboDiffusion && \
+    git clone --depth 1 https://github.com/thu-ml/TurboDiffusion.git repos/TurboDiffusion && \
     git clone --depth 1 https://github.com/NVlabs/rcm.git repos/rcm
 
 # Install core Python dependencies
