@@ -1,0 +1,145 @@
+# Lucy 2.0 Clone — Inference-First PoC Experiment Configuration
+# All phases reference this single config file.
+
+# ── Paths ──────────────────────────────────────────────
+paths:
+  repos_root: /workspace/repos              # On RunPod
+  streamdiffv2: /workspace/repos/StreamDiffusionV2
+  stable_fast: /workspace/repos/stable-fast
+  turbodiffusion: /workspace/repos/TurboDiffusion
+  rcm: /workspace/repos/rcm
+  checkpoint_folder: /workspace/checkpoints
+  output_root: /workspace/results
+  network_volume: /workspace/network-volume  # Persistent RunPod volume
+
+# ── Model ──────────────────────────────────────────────
+model:
+  model_type: "T2V-1.3B"
+  num_transformer_blocks: 30
+  num_heads: 12
+  dim: 1536
+  head_dim: 128
+  config_path: /workspace/repos/StreamDiffusionV2/configs/wan_causal_dmd_v2v.yaml
+
+# ── Baseline (Phase 1) ────────────────────────────────
+phase1:
+  height: 480
+  width: 832
+  num_frames: 81
+  chunk_size: 4
+  noise_scale: 0.7
+  fps: 16
+  denoising_steps: 2          # → [700, 500, 0]
+  num_warmup_chunks: 5        # Warmup before measuring
+  num_measure_chunks: 20      # Chunks to measure
+  prompt: "A serene mountain landscape with a flowing river, cinematic quality"
+
+# ── Phase 2: Optimization experiments ──────────────────
+phase2:
+  # torch.compile
+  compile:
+    enabled: true
+    mode: "max-autotune"       # or "reduce-overhead", "default"
+    dynamic: false
+    fullgraph: false
+
+  # stable-fast
+  stable_fast:
+    enable_jit: true
+    enable_jit_freeze: true
+    enable_cnn_optimization: true
+    enable_fused_linear_geglu: true
+    prefer_lowp_gemm: true
+    enable_cuda_graph: false    # Test separately
+    enable_triton: true
+
+  # FP8 quantization
+  fp8:
+    dit_dtype: "float8_e4m3fn"   # or float8_e5m2
+    vae_dtype: "bfloat16"        # Keep VAE at BF16
+    compute_dtype: "bfloat16"
+
+  # Attention comparison
+  attention:
+    variants:
+      - "flex_attention"         # Current default (compiled, max-autotune)
+      - "flash_attn"             # flash_attn_interface
+      - "xformers"               # xformers.ops.memory_efficient_attention
+
+  # Denoising step variants
+  denoising_steps:
+    variants:
+      - name: "4-step"
+        steps: [700, 600, 500, 400, 0]
+      - name: "3-step"
+        steps: [700, 600, 400, 0]
+      - name: "2-step"
+        steps: [700, 500, 0]
+      - name: "1-step"
+        steps: [700, 0]
+
+# ── Phase 3: Resolution scaling ───────────────────────
+phase3:
+  resolutions:
+    - name: "360p"
+      height: 360
+      width: 640
+    - name: "480p"
+      height: 480
+      width: 832
+    - name: "544p"
+      height: 544
+      width: 960
+    - name: "720p"
+      height: 720
+      width: 1280
+    - name: "1080p"
+      height: 1080
+      width: 1920
+
+  kv_cache_sizes: [12, 8, 6, 4]  # local_attn_size variants
+
+  model_size_simulation:
+    # Actual model
+    - name: "1.3B"
+      blocks: 30
+      dim: 1536
+      heads: 12
+    # Simulated models (extrapolated from per-block timing)
+    - name: "3B"
+      blocks: 36
+      dim: 2048
+      heads: 16
+    - name: "5B"
+      blocks: 40
+      dim: 2560
+      heads: 20
+
+# ── Phase 4: Multi-GPU ────────────────────────────────
+phase4:
+  gpu_configs:
+    - num_gpus: 1
+      block_split: null
+    - num_gpus: 2
+      block_split: [[0, 15], [15, 30]]
+    - num_gpus: 4
+      block_split: [[0, 8], [8, 15], [15, 23], [23, 30]]
+
+  throughput_test:
+    num_frames: 100            # Frames for throughput measurement
+    warmup_frames: 10
+
+  latency_test:
+    num_iterations: 50         # Single-frame latency iterations
+
+  communication:
+    measure_p2p: true
+    tensor_sizes_mb: [1, 5, 10, 50]  # Test various tensor sizes
+
+# ── Profiling settings ─────────────────────────────────
+profiling:
+  use_cuda_events: true
+  num_warmup: 5
+  num_iterations: 20
+  sync_before_measure: true
+  output_format: "json"        # json, csv, both
