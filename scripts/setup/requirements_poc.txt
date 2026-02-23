@@ -1,11 +1,18 @@
-# Lucy PoC — ONLY packages missing from RunPod base image
-# torch, torchvision, flash-attn, xformers are already in the RunPod image — DO NOT reinstall
+# Lucy PoC — packages missing from RunPod base image
+# torch, torchvision, xformers are already in the RunPod image — DO NOT reinstall
 
-# Diffusion
+# HuggingFace ecosystem
+huggingface-hub>=0.20.0
+transformers>=4.44.0
 diffusers>=0.35.1
+accelerate>=1.0.0
+safetensors>=0.4.0
+sentencepiece>=0.2.0
+peft>=0.10.0
+
+# Diffusion utilities
 omegaconf>=2.3.0
 einops>=0.8.0
-peft>=0.10.0
 
 # Video
 imageio>=2.34.0
@@ -15,6 +22,3 @@ av>=12.0.0
 
 # Profiling & analysis
 tabulate>=0.9.0
-
-# HuggingFace (usually already present)
-sentencepiece>=0.2.0

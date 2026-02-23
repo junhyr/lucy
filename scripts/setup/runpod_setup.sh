@@ -17,6 +17,10 @@ for arg in "$@"; do
   esac
 done
 
+# Auto-detect lucy repo root (parent of scripts/setup/)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LUCY_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 WORKSPACE="/workspace"
 REPOS_DIR="$WORKSPACE/repos"
 CKPT_DIR="$WORKSPACE/checkpoints"
@@ -72,9 +76,8 @@ python3 -c "import torch; print(f'  torch {torch.__version__} ✓')" 2>/dev/null
 python3 -c "import flash_attn; print(f'  flash-attn {flash_attn.__version__} ✓')" 2>/dev/null || true
 python3 -c "import xformers; print(f'  xformers {xformers.__version__} ✓')" 2>/dev/null || true
 
-echo "  Installing missing packages (lightweight only)..."
-pip install -q --no-deps -r /workspace/lucy/scripts/setup/requirements_poc.txt 2>/dev/null || \
-  pip install -q -r /workspace/lucy/scripts/setup/requirements_poc.txt 2>/dev/null || true
+echo "  Installing missing packages..."
+pip install -q -r "$LUCY_ROOT/scripts/setup/requirements_poc.txt" 2>/dev/null || true
 
 # Only build flash-attn if NOT already installed
 python3 -c "import flash_attn" 2>/dev/null || {
@@ -160,7 +163,8 @@ if torch.cuda.is_available():
     print(f'GPU: {torch.cuda.get_device_name(0)}')
     print(f'GPU count: {torch.cuda.device_count()}')
     print(f'CUDA version: {torch.version.cuda}')
-    mem = torch.cuda.get_device_properties(0).total_mem / 1024**3
+    props = torch.cuda.get_device_properties(0)
+    mem = getattr(props, 'total_memory', getattr(props, 'total_mem', 0)) / 1024**3
     print(f'GPU memory: {mem:.1f} GB')
     print(f'SM capability: {torch.cuda.get_device_capability()}')
 

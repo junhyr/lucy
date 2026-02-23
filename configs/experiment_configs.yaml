@@ -2,15 +2,17 @@
 # All phases reference this single config file.
 
 # ── Paths ──────────────────────────────────────────────
+# Repos are inside the lucy checkout at /workspace/lucy/repos/ (symlinked or cloned)
+# Override via CLI or env vars if layout differs.
 paths:
-  repos_root: /workspace/repos              # On RunPod
+  repos_root: /workspace/repos
   streamdiffv2: /workspace/repos/StreamDiffusionV2
   stable_fast: /workspace/repos/stable-fast
   turbodiffusion: /workspace/repos/TurboDiffusion
   rcm: /workspace/repos/rcm
   checkpoint_folder: /workspace/checkpoints
   output_root: /workspace/results
-  network_volume: /workspace/network-volume  # Persistent RunPod volume
+  network_volume: /workspace/network-volume
 
 # ── Model ──────────────────────────────────────────────
 model:
