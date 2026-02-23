@@ -86,10 +86,13 @@ python3 -c "import flash_attn" 2>/dev/null || {
     echo "  WARNING: flash-attn build failed, will use flex_attention fallback"
 }
 
-# StreamDiffusionV2 — just add to path, don't pip install (avoid dependency re-resolution)
+# StreamDiffusionV2 — install as editable so 'causvid' and 'streamv2v' are importable
 if [ -d "$REPOS_DIR/StreamDiffusionV2" ]; then
-  echo "  Adding StreamDiffusionV2 to PYTHONPATH"
-  export PYTHONPATH="$REPOS_DIR/StreamDiffusionV2:${PYTHONPATH:-}"
+  echo "  Installing StreamDiffusionV2 (editable, no-deps)..."
+  pip install -q --no-deps -e "$REPOS_DIR/StreamDiffusionV2" 2>/dev/null || {
+    echo "  pip install -e failed, falling back to PYTHONPATH"
+    export PYTHONPATH="$REPOS_DIR/StreamDiffusionV2:${PYTHONPATH:-}"
+  }
 fi
 
 # ── 4. Download models ────────────────────────────────────────
